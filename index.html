@@ -1,0 +1,205 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Guatemala & Belize Interactive Trip Checklist</title></head><body>
+<style>
+  .section { margin-bottom: 1.5rem; }
+  .section-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--border-radius-md); cursor: pointer; user-select: none; border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); }
+  .section-header:hover { background: var(--color-background-tertiary); }
+  .section-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); flex: 1; }
+  .section-icon { font-size: 18px; color: var(--color-text-secondary); }
+  .chevron { font-size: 16px; color: var(--color-text-tertiary); transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .items { display: none; padding: 10px 4px 0; flex-direction: column; gap: 6px; }
+  .items.open { display: flex; }
+  .item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); cursor: pointer; transition: background 0.15s; }
+  .item:hover { background: var(--color-background-secondary); }
+  .item.done { opacity: 0.55; }
+  .item.done .item-text { text-decoration: line-through; color: var(--color-text-tertiary); }
+  .check-circle { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--color-border-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .item.done .check-circle { background: #639922; border-color: #639922; }
+  .item-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.4; }
+  .item-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .badge-urgent { background: #FCEBEB; color: #A32D2D; }
+  .badge-done { background: #EAF3DE; color: #3B6D11; }
+  .progress-bar-wrap { background: var(--color-background-secondary); border-radius: 99px; height: 6px; margin-bottom: 1.5rem; overflow: hidden; border: 0.5px solid var(--color-border-tertiary); }
+  .progress-bar-fill { height: 6px; border-radius: 99px; background: #639922; transition: width 0.3s; }
+  .progress-label { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 6px; display: flex; justify-content: space-between; }
+</style>
+
+<h2 class="sr-only">Guatemala & Belize trip preparation checklist</h2>
+
+<div style="padding: 1rem 0 0.5rem;">
+  <div class="progress-label">
+    <span>Overall prep progress</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-bar" style="width:0%"></div></div>
+</div>
+
+<div id="checklist"></div>
+
+<script>
+const sections = [
+  {
+    icon: "ti-id-badge-2",
+    title: "Documents & admin",
+    items: [
+      { text: "Check passport validity", sub: "Must be valid 6+ months beyond May 30", urgent: true },
+      { text: "Make photocopies of passport", sub: "Keep one copy separate from original; email yourself a scan" },
+      { text: "Check visa requirements", sub: "US citizens: no visa needed for Guatemala or Belize (tourism)" },
+      { text: "Register trip with STEP", sub: "Free Smart Traveler Enrollment Program at step.state.gov", urgent: true },
+      { text: "Screenshot/print all accommodation confirmations" },
+      { text: "Save emergency contacts & embassy numbers offline", sub: "Guatemala: +502 2326-4000 | Belize: +501 822-4011" },
+      { text: "Notify bank & credit cards of travel dates", urgent: true },
+      { text: "Check your credit card for foreign transaction fees", sub: "Consider a no-fee card (Charles Schwab debit, Wise card)" },
+    ]
+  },
+  {
+    icon: "ti-vaccine",
+    title: "Health & vaccines",
+    items: [
+      { text: "See a travel medicine doctor or check CDC recommendations", urgent: true, sub: "Ideally 4–6 weeks before travel" },
+      { text: "Confirm Hepatitis A & Typhoid vaccines", sub: "Both recommended for Guatemala & Belize" },
+      { text: "Confirm routine vaccines are up to date", sub: "MMR, Tdap, flu, COVID" },
+      { text: "Get prescription for malaria prophylaxis if recommended", sub: "Check with your doctor for rural Guatemala areas" },
+      { text: "Pack prescription medications + extra supply" },
+      { text: "Get travel health insurance or confirm coverage", urgent: true, sub: "Include emergency evacuation coverage" },
+    ]
+  },
+  {
+    icon: "ti-first-aid-kit",
+    title: "First aid & toiletries",
+    items: [
+      { text: "High-SPF reef-safe sunscreen", sub: "Important for Caye Caulker especially — marine park rules" },
+      { text: "DEET-based insect repellent (30–50%)", urgent: true, sub: "Mosquitoes are active; dengue & Zika present" },
+      { text: "Oral rehydration salts (Liquid IV or Pedialyte packets)" },
+      { text: "Antidiarrheal (Imodium) & antacid" },
+      { text: "Antihistamine (Benadryl or Zyrtec)" },
+      { text: "Moleskin / blister pads", sub: "For hiking days in Guatemala" },
+      { text: "Small first aid kit", sub: "Band-aids, antiseptic wipes, medical tape" },
+      { text: "Hand sanitizer & water purification tablets" },
+    ]
+  },
+  {
+    icon: "ti-shirt",
+    title: "Clothing (carry-on only)",
+    items: [
+      { text: "Moisture-wicking shirts (4–5)", sub: "Quick-dry fabric is key for heat & laundry on the go" },
+      { text: "Lightweight pants/convertible zip-offs (2)", sub: "For Guatemala temples & cooler evenings" },
+      { text: "Shorts (2–3)", sub: "For Caye Caulker beach days" },
+      { text: "Swimwear (2)", sub: "Belize snorkeling & beach" },
+      { text: "Lightweight long sleeves (1–2)", sub: "For mosquito protection in evenings" },
+      { text: "Underwear & socks (5–6 pairs)", sub: "Pack merino wool socks if possible" },
+      { text: "Water shoes or sport sandals", sub: "Essential for Caye Caulker reef & boat docks" },
+      { text: "Comfortable walking/hiking shoes", sub: "You should already have these from hiking gear" },
+      { text: "Light packable layer/fleece", sub: "Guatemala highlands can be cool at night" },
+      { text: "Rain gear", sub: "✓ Already have", done: true },
+    ]
+  },
+  {
+    icon: "ti-plug",
+    title: "Tech & gear",
+    items: [
+      { text: "Portable charger", sub: "✓ Already have", done: true },
+      { text: "Universal power adapter", sub: "Guatemala & Belize use US-style plugs (Type A/B) — you're likely fine" },
+      { text: "Download offline maps (Maps.me or Google Maps offline)", urgent: true, sub: "Download Antigua, Guatemala City, and Belize areas" },
+      { text: "Check international phone plan", sub: "Add a travel plan with your carrier, or buy a local SIM in Guatemala City" },
+      { text: "Dry bag or waterproof pouch", sub: "Crucial for Caye Caulker boat trips and snorkeling" },
+      { text: "Headlamp or small flashlight" },
+      { text: "Reusable water bottle (insulated)", sub: "Tap water is not safe to drink — refill from filtered sources" },
+      { text: "Small daypack or packable bag", sub: "For day trips separate from your main carry-on" },
+    ]
+  },
+  {
+    icon: "ti-cash",
+    title: "Money & safety",
+    items: [
+      { text: "Get some Guatemalan Quetzales (GTQ) before or on arrival", sub: "ATMs widely available in Antigua; small bills are handy" },
+      { text: "Get Belize dollars or USD for Caye Caulker", sub: "USD is widely accepted in Belize at roughly 2:1 rate" },
+      { text: "Keep most cash in hidden money belt", sub: "Only carry what you need each day" },
+      { text: "Set up Google Pay / Apple Pay as backup" },
+      { text: "Research scam awareness & petty theft tips", sub: "Be aware in markets; use hotel safe for valuables" },
+    ]
+  },
+  {
+    icon: "ti-backpack",
+    title: "Packing logistics",
+    items: [
+      { text: "Hiking gear organized & packed", sub: "✓ Already have", done: true },
+      { text: "Use packing cubes to compress clothing", sub: "Carry-on space is precious — cubes help significantly" },
+      { text: "Pack toiletries in TSA-approved 3-1-1 bag", sub: "All liquids 3.4oz or less; one quart-sized clear bag" },
+      { text: "Weigh your carry-on before leaving", sub: "Most airlines allow 22 lbs / 10 kg for carry-on" },
+      { text: "Wear your bulkiest items on travel days" },
+      { text: "Research laundry options in Guatemala", sub: "Lavanderías in Antigua are cheap & common — plan a mid-trip wash" },
+    ]
+  }
+];
+
+const alreadyDone = ["Rain gear", "Portable charger", "Hiking gear organized & packed"];
+
+function build() {
+  const el = document.getElementById("checklist");
+  const state = JSON.parse(localStorage.getItem("trip-checklist") || "{}");
+
+  sections.forEach((sec, si) => {
+    const secDiv = document.createElement("div");
+    secDiv.className = "section";
+
+    const header = document.createElement("div");
+    header.className = "section-header";
+    const doneCount = sec.items.filter((it, ii) => state[`${si}-${ii}`] || it.done).length;
+    header.innerHTML = `<i class="ti ${sec.icon} section-icon" aria-hidden="true"></i><span class="section-title">${sec.title}</span><span style="font-size:12px;color:var(--color-text-tertiary);margin-right:6px;">${doneCount}/${sec.items.length}</span><i class="ti ti-chevron-down chevron" aria-hidden="true"></i>`;
+
+    const itemsDiv = document.createElement("div");
+    itemsDiv.className = "items";
+
+    sec.items.forEach((it, ii) => {
+      const key = `${si}-${ii}`;
+      const checked = state[key] || it.done;
+      const itemEl = document.createElement("div");
+      itemEl.className = "item" + (checked ? " done" : "");
+      itemEl.innerHTML = `<div class="check-circle">${checked ? '<i class="ti ti-check" style="font-size:12px;color:#fff;"></i>' : ''}</div><div style="flex:1"><div class="item-text">${it.text}</div>${it.sub ? `<div class="item-sub">${it.sub}</div>` : ''}</div>${it.urgent ? `<span class="badge badge-urgent">Priority</span>` : ''}`;
+      itemEl.addEventListener("click", () => {
+        if (it.done) return;
+        state[key] = !state[key];
+        try { localStorage.setItem("trip-checklist", JSON.stringify(state)); } catch(e){}
+        rebuild();
+      });
+      itemsDiv.appendChild(itemEl);
+    });
+
+    header.addEventListener("click", () => {
+      const open = itemsDiv.classList.toggle("open");
+      header.querySelector(".chevron").classList.toggle("open", open);
+    });
+
+    secDiv.appendChild(header);
+    secDiv.appendChild(itemsDiv);
+    el.appendChild(secDiv);
+  });
+
+  updateProgress(state);
+}
+
+function updateProgress(state) {
+  let total = 0, done = 0;
+  sections.forEach((sec, si) => {
+    sec.items.forEach((it, ii) => {
+      total++;
+      if (state[`${si}-${ii}`] || it.done) done++;
+    });
+  });
+  const pct = Math.round((done / total) * 100);
+  document.getElementById("prog-bar").style.width = pct + "%";
+  document.getElementById("prog-pct").textContent = pct + "%";
+}
+
+function rebuild() {
+  document.getElementById("checklist").innerHTML = "";
+  build();
+  const opens = document.querySelectorAll(".items.open");
+}
+
+build();
+document.querySelectorAll(".section-header")[0].click();
+</script>
+</body></html>
